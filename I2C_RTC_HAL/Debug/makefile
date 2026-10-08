@@ -60,8 +60,8 @@ all: main-build
 main-build: I2C_RTC_HAL.elf secondary-outputs
 
 # Tool invocations
-I2C_RTC_HAL.elf I2C_RTC_HAL.map: $(OBJS) $(USER_OBJS) C:\Users\davit\STM32CubeIDE\workspace_1.18.1\I2C_RTC_HAL\STM32F405RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "I2C_RTC_HAL.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\davit\STM32CubeIDE\workspace_1.18.1\I2C_RTC_HAL\STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="I2C_RTC_HAL.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+I2C_RTC_HAL.elf I2C_RTC_HAL.map: $(OBJS) $(USER_OBJS) C:\Data_backup_class\STM32\ Demo\I2C_RTC_HAL\STM32F405RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "I2C_RTC_HAL.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Data_backup_class\STM32 Demo\I2C_RTC_HAL\STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="I2C_RTC_HAL.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

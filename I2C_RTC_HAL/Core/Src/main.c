@@ -55,13 +55,25 @@ uint8_t bcd_to_decimal(uint8_t value);
 uint8_t decimal_to_bcd(uint8_t value);
 uint8_t rtc_read_seconds(void);
 uint8_t rtc_read_mins(void);
+uint8_t rtc_read_hours(uint8_t *hour, uint8_t *is_pm, uint8_t *is_12hr);
 void rtc_alarm_seconds_match(uint8_t sec);
 void alarm_status_check(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t time_sec,time_min,alarm_flag=0;
+uint8_t time_sec,time_min;
+volatile uint8_t alarm_flag=0;
+uint8_t hour,is_pm,is_12hr;
+void rtc_set_12hr_pm(void)
+{
+    uint8_t hour = 0x72;
+
+    if (HAL_I2C_Mem_Write(&hi2c2,RTC_ADDR,0x02,I2C_MEMADD_SIZE_8BIT,&hour,1,HAL_MAX_DELAY) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if(GPIO_Pin == GPIO_PIN_8)
@@ -119,17 +131,20 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
+
   rtc_alarm_seconds_match(30);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
+ {
     /* USER CODE END WHILE */
 	  time_sec = rtc_read_seconds();
-	 // time_min = rtc_read_mins();
-	//  alarm_status_check();
+	  time_min = rtc_read_mins();
+	 // rtc_set_12hr_pm();
+	  rtc_read_hours(&hour, &is_pm, &is_12hr);
+	  alarm_status_check();
 	  HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
@@ -282,6 +297,71 @@ uint8_t rtc_read_mins(void)
 
     return bcd_to_decimal(min);
 }
+uint8_t rtc_read_hours(uint8_t *hour, uint8_t *is_pm, uint8_t *is_12hr)
+{
+    uint8_t hours;
+    uint8_t reg = 0x02;
+
+    if (HAL_I2C_Mem_Read(&hi2c2,RTC_ADDR,reg,I2C_MEMADD_SIZE_8BIT,&hours,1,HAL_MAX_DELAY) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    /*
+     * DS3231 bit 6:
+     * 0 = 24-hour mode
+     * 1 = 12-hour mode
+     */
+
+    if (hours & 0x40)
+    {
+        /* 12-hour mode */
+        *is_12hr = 1;
+
+        /*
+         * Bit 5:
+         * 0 = AM
+         * 1 = PM
+         */
+        if (hours & 0x20)
+        {
+            *is_pm = 1;
+        }
+        else
+        {
+            *is_pm = 0;
+        }
+
+        /*
+         * Keep only hour bits
+         * Bits 4:0
+         */
+        hours &= 0x1F;
+
+        *hour = bcd_to_decimal(hours);
+    }
+    else
+    {
+        /* 24-hour mode */
+        *is_12hr = 0;
+
+        /*
+         * AM/PM is not applicable
+         */
+        *is_pm = 0;
+
+        /*
+         * Keep hour bits
+         * Bits 5:0
+         */
+        hours &= 0x3F;
+
+        *hour = bcd_to_decimal(hours);
+    }
+
+    return *hour;
+}
+
 void rtc_alarm_seconds_match(uint8_t sec)
 {
     uint8_t alarm[4];
